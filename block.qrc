@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/">
+        <file>image/block/png/element_red_square_glossy.png</file>
+        <file>image/block/png/element_blue_square_glossy.png</file>
+        <file>image/block/png/selectorA.png</file>
+        <file>image/block/png/element_grey_square_glossy.png</file>
+        <file>image/block/png/selectorB.png</file>
+        <file>image/block/png/selectorC.png</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>image/close.png</file>
+        <file>image/minimize2.png</file>
+        <file>image/minimize1.png</file>
+        <file>image/Tetris_logo.png</file>
+        <file>image/tetris-icon-25.jpg</file>
+    </qresource>
+</RCC>
