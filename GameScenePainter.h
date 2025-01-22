@@ -2,14 +2,15 @@
 #define GAMESCENEPAINTER_H
 
 #include <QWidget>
-#include "Block.h"
+#include <QMessageBox>
 #include <QTimer>
 #include <QKeyEvent>
 #include <QPainter>
 #include <QStyleOption>
 #include <QPen>
+#include "Block.h"
 
-#define SPEED_MS 400
+#define DEFAULT_SPEED_MS 400
 #define REFRESH_MS 1
 constexpr int Margain = 20;
 constexpr int BlockSize = 30;
@@ -36,13 +37,20 @@ public:
 private:
     Ui::GameScenePainter *ui;
     Block *blocks;
+    QMessageBox *gameOverMessage;
+    QPushButton *yesButton;
+    QPushButton *noButton;
+
     int Score = 0;
+
     bool isGameOver = false;
+
+
     int gameTimer;
     int paintTimer;
     QTimer *gameQTimer;
     QTimer *paintQTimer;
-    int speed_ms = SPEED_MS;
+    int speed_ms = DEFAULT_SPEED_MS;
     int refresh_ms = REFRESH_MS;
 
 

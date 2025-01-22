@@ -1,6 +1,7 @@
+#include <QPropertyAnimation>
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <QPropertyAnimation>
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MenuWindow)
@@ -10,7 +11,7 @@ MainWindow::MainWindow(QWidget *parent)
     this->setWindowFlags(Qt::FramelessWindowHint);//隐藏最大最小化等按键
     this->setAttribute(Qt::WA_TranslucentBackground);//设置窗口透明化
 
-    //窗口出现动画（csdn）
+    //窗口出现动画
     QPropertyAnimation *animation = new QPropertyAnimation(this, "windowOpacity");
     animation->setDuration(500);
     animation->setStartValue(0);
@@ -72,7 +73,7 @@ void MainWindow::StartButtonClicked()
     this->close();
 }
 
-//退出动画（csdn）
+//窗口退出动画
 void MainWindow::QuitButtonClicked()
 {
     QPropertyAnimation *animation= new QPropertyAnimation(this, "windowOpacity");

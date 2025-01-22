@@ -87,9 +87,12 @@ QPushButton:!enabled{
    <property name="font">
     <font>
      <family>方正像素18</family>
-     <pointsize>20</pointsize>
+     <pointsize>18</pointsize>
      <bold>false</bold>
     </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true"/>
    </property>
    <property name="text">
     <string>得  分</string>
@@ -112,9 +115,9 @@ QPushButton:!enabled{
    </property>
    <property name="font">
     <font>
-     <family>方正像素18</family>
+     <family>LCDMono2</family>
      <pointsize>20</pointsize>
-     <bold>false</bold>
+     <bold>true</bold>
     </font>
    </property>
    <property name="mouseTracking">
@@ -155,6 +158,97 @@ border-style:solid;             /*边框样式（实线）*/
    </property>
    <property name="clearButtonEnabled">
     <bool>false</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="NextBlockLabel">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>170</y>
+     <width>121</width>
+     <height>40</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>方正像素18</family>
+     <pointsize>15</pointsize>
+     <bold>false</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>下一个方块</string>
+   </property>
+   <property name="textFormat">
+    <enum>Qt::AutoText</enum>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="SpeedLine">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>370</y>
+     <width>120</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>LCDMono2</family>
+     <pointsize>14</pointsize>
+     <bold>true</bold>
+     <kerning>true</kerning>
+    </font>
+   </property>
+   <property name="focusPolicy">
+    <enum>Qt::NoFocus</enum>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QLineEdit {
+background: black;
+color:white;
+border: none;
+ border-radius: 10px;             /*四角圆角的直径*/
+border-style:solid;             /*边框样式（实线）*/
+}</string>
+   </property>
+   <property name="text">
+    <string>0</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+   <property name="readOnly">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>340</y>
+     <width>120</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <family>方正像素18</family>
+     <pointsize>15</pointsize>
+     <bold>false</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>当前下落速度</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
    </property>
   </widget>
  </widget>

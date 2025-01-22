@@ -4,8 +4,10 @@
 #include <QMainWindow>
 #include <QStyleOption>
 #include <QPainter>
-#include "GameScenePainter.h"
 #include <QMouseEvent>
+#include "GameScenePainter.h"
+
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MenuWindow;

@@ -1,8 +1,10 @@
 #ifndef BLOCK_H
 #define BLOCK_H
 
-#include "Tetrominos.h"
 #include <QRandomGenerator>
+#include "Tetrominos.h"
+
+
 class Block
 {
 public:
@@ -50,7 +52,8 @@ public:
 private:
     int x = 5;
     int y = 0;
-    int BlockType = 0;
+    int CurrentBlockType = 0;
+    int NextBlockType = 0;
     int BlockState = 0;
 
 public:
@@ -62,34 +65,38 @@ public:
     {
         return x;
     }
-    void InitScene()
+    void InitScene()//初始化游戏场景
     {
         for(int i = 0; i < sc_ArrRow; i++)
         {
             GameSceneBlock[i] = DefaultSceneBlock[i];//初始化游戏场景数组
         }
     }
-    void GetNextBlock()
+    void GetNextBlock()//获得下一个方块
     {
         int randomTypeInt = QRandomGenerator::global()->bounded(7);//生成0-6的随机数,代表方块种类
-        BlockType = randomTypeInt;
+        NextBlockType = randomTypeInt;
         for(int i = 0; i < sc_BlockRow; i++)
         {
             next_block[i] = Tetrominos::Tetromino[randomTypeInt][BlockState][i];
         }
     }
-    void CreateNewBlock()
+    void CreateNewBlock()//创建新方块
     {
+        //初始化状态
         x = 5;
         y = 0;
         BlockState = 0;
+        CurrentBlockType = NextBlockType;
+
         for(int i = 0; i < sc_BlockRow; i++)
         {
             block[i] = next_block[i];
         }
+
         GetNextBlock();
     }
-    void MergeSceneAndBlock(int &Score)//maybe have bug
+    void MergeSceneAndBlock(int &Score)//合并场景和方块，如果有消行，返回获得的分数
     {
         for(int SceneStartRow = y , BlockStartRow = 0; SceneStartRow < sc_ArrRow && SceneStartRow < y + 4 && BlockStartRow < sc_BlockRow; SceneStartRow++, BlockStartRow++)
         {
@@ -113,7 +120,7 @@ public:
         Score += cnt * 100;
 
     }
-    bool isBlockCollide()
+    bool isBlockCollide()//判断是否碰撞
     {
         for(int BlockStartRow = 0, SceneStartRow = y; BlockStartRow < sc_BlockRow && SceneStartRow < sc_ArrRow && SceneStartRow < y + 4; BlockStartRow++, SceneStartRow++)
         {
@@ -125,7 +132,7 @@ public:
         }
         return false;
     }
-    bool AutoMoveDown()
+    bool AutoMoveDown()//自动下落
     {
         y++;
         if(isBlockCollide())
@@ -135,7 +142,7 @@ public:
         }
         return true;
     }
-    void MoveLeft()
+    void MoveLeft()//左移
     {
         x++;
         if(isBlockCollide())
@@ -143,7 +150,7 @@ public:
             x--;
         }
     }
-    void MoveRight()
+    void MoveRight()//右移
     {
         x--;
         if(isBlockCollide())
@@ -151,20 +158,20 @@ public:
             x++;
         }
     }
-    void BlockRotate()
+    void BlockRotate()//方块旋转的实现
     {
         int newState = (BlockState + 1) % 4;
 
         for(int i = 0; i < sc_BlockRow; i++)
         {
-            block[i] = Tetrominos::Tetromino[BlockType][newState][i];
+            block[i] = Tetrominos::Tetromino[CurrentBlockType][newState][i];
         }
 
         if(isBlockCollide())
         {
             for(int i = 0; i < sc_BlockRow; i++)
             {
-                block[i] = Tetrominos::Tetromino[BlockType][BlockState][i];
+                block[i] = Tetrominos::Tetromino[CurrentBlockType][BlockState][i];
             }
         }
         else
@@ -172,7 +179,7 @@ public:
             BlockState = newState;
         }
     }
-    bool isGameOver()
+    bool isGameOver()//判断游戏结束
     {
         //判定游戏结束
         if(GameSceneBlock[3] != 0b1110000000000111)
@@ -182,7 +189,7 @@ public:
         }
         return false;
     }
-    void clearBlock()
+    void clearBlock()//游戏结束，清除方块
     {
         for(int i = 0; i < sc_BlockRow; i++)
         {

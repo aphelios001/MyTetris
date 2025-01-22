@@ -9,38 +9,45 @@ GameScenePainter::GameScenePainter(QWidget *parent)
     this->setFixedSize(this->width(),this->height());
     this->setWindowFlags(Qt::FramelessWindowHint);//隐藏最大最小化等按键
     this->setAttribute(Qt::WA_TranslucentBackground);//设置窗口透明化
-    this->setFocus();
+    this->setFocus();//设置焦点
 
     //gameQTimer = new QTimer(this);
     //paintQTimer = new QTimer(this);
     //connect(gameQTimer, &QTimer::timeout, this, &GameScenePainter::BlockUpdate);
     //connect(paintQTimer, &QTimer::timeout, this, &GameScenePainter::SceneUpdate);
 
-    startGame();
+    //初始化游戏结束窗口
+    gameOverMessage = new QMessageBox();
+    yesButton = gameOverMessage->addButton("是", QMessageBox::YesRole);
+    noButton = gameOverMessage->addButton("否", QMessageBox::NoRole);
+    gameOverMessage->setWindowTitle("游戏结束");
 
-
+    startGame();//开始游戏
 }
 
 void GameScenePainter::startGame()
 {
+    //开启计时器
+    gameTimer = startTimer(speed_ms);//游戏计时器
+    paintTimer = startTimer(refresh_ms);//画面刷新计数器
 
-    gameTimer = startTimer(speed_ms);
-    paintTimer = startTimer(refresh_ms);
-
+    //设定游戏初始状态
     Score = 0;
     isGameOver = false;
+    ui->SpeedLine->setText(QString::number(speed_ms) + "ms");
 
     //gameQTimer->start(speed_ms);
     //paintQTimer->start(refresh_ms);
 
-
+    //初始化方块
     blocks = new Block();
     blocks->InitScene();
     blocks->GetNextBlock();
     blocks->CreateNewBlock();
+
 }
 
-void GameScenePainter::gameOver()
+void GameScenePainter::gameOver()//游戏结束
 {
 
     killTimer(gameTimer);
@@ -50,12 +57,23 @@ void GameScenePainter::gameOver()
     //paintQTimer->stop();
 
     //弹出窗口
+    gameOverMessage->setText(QString("游戏结束，你的得分为 %1 ，是否重新开始游戏？").arg(Score));
+    gameOverMessage->exec();
+    if(gameOverMessage->clickedButton() == yesButton)
+    {
+        startGame();
+    }
+    else if(gameOverMessage->clickedButton() == noButton)
+    {
+        qDebug() << "close";
+        this->close();
+    }
 
 
 
 }
 
-void GameScenePainter::MoveDownFaster()
+void GameScenePainter::MoveDownFaster()//快速下落
 {
     int newSpeed = speed_ms / 4;
     gameTimer = startTimer(newSpeed);
@@ -63,7 +81,7 @@ void GameScenePainter::MoveDownFaster()
     //gameQTimer->setInterval(newSpeed);
 }
 
-void GameScenePainter::MoveDownOrigin()
+void GameScenePainter::MoveDownOrigin()//恢复原来的下落速度
 {
     gameTimer = startTimer(speed_ms);
 
@@ -75,7 +93,7 @@ GameScenePainter::~GameScenePainter()
     delete ui;
 }
 
-void GameScenePainter::timerEvent(QTimerEvent *event)
+void GameScenePainter::timerEvent(QTimerEvent *event)//计时器更新画面
 {
     if(event->timerId() == gameTimer)
     {
@@ -107,7 +125,7 @@ void GameScenePainter::timerEvent(QTimerEvent *event)
     }
 }
 
-void GameScenePainter::paintEvent(QPaintEvent *event)
+void GameScenePainter::paintEvent(QPaintEvent *event)//绘制画面
 {
     QStyleOption opt;
     opt.initFrom(this);
@@ -141,18 +159,19 @@ void GameScenePainter::paintEvent(QPaintEvent *event)
 
     //绘制下一个方块的网格
     //这里的x和y是ui真正的坐标
-    for(int realX = 410; realX <= 470; realX += NextBlockSize)
+    //左上角格子的左上角坐标
+    int next_block_x = 420;
+    int next_block_y = 225;
+
+    for(int realX = next_block_x; realX <= next_block_x + 3 * NextBlockSize; realX += NextBlockSize)
     {
-        for(int realY = 220 ; realY <= 280; realY+= NextBlockSize)
+        for(int realY = next_block_y ; realY <= next_block_y + 3 * NextBlockSize; realY+= NextBlockSize)
         {
             painter.drawPixmap(realX ,realY , NextBlockSize, NextBlockSize, QPixmap("://image/block/png/element_grey_square_glossy.png"));
         }
     }
 
     //绘制下一个方块
-    //这里的x和y是ui真正的坐标
-    int next_block_x = 410;
-    int next_block_y = 220;
 
     for(int block_dy = 0; block_dy < Block::sc_BlockRow; block_dy++)
     {
@@ -236,7 +255,7 @@ void GameScenePainter::paintEvent(QPaintEvent *event)
 
 }
 
-void GameScenePainter::keyPressEvent(QKeyEvent *event)
+void GameScenePainter::keyPressEvent(QKeyEvent *event)//按键事件
 {
     int key = event->key();
 
@@ -285,6 +304,9 @@ void GameScenePainter::on_CloseButton_released()
     this->close();
 }
 
+
+
+//测试计时器功能用
 void GameScenePainter::SceneUpdate()
 {
     update();
