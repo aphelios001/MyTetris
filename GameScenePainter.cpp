@@ -1,5 +1,7 @@
+#include <QDebug>
 #include "GameScenePainter.h"
 #include "ui_GameScenePainter.h"
+#include "mainwindow.h"
 
 GameScenePainter::GameScenePainter(QWidget *parent)
     : QWidget(parent)
@@ -18,32 +20,55 @@ GameScenePainter::GameScenePainter(QWidget *parent)
 
     //初始化游戏结束窗口
     gameOverMessage = new QMessageBox();
-    yesButton = gameOverMessage->addButton("是", QMessageBox::YesRole);
-    noButton = gameOverMessage->addButton("否", QMessageBox::NoRole);
+    yesButton = gameOverMessage->addButton("重新开始", QMessageBox::YesRole);
+    noButton = gameOverMessage->addButton("退出游戏", QMessageBox::NoRole);
     gameOverMessage->setWindowTitle("游戏结束");
 
-    startGame();//开始游戏
+    connect(ui->SaveButton, SIGNAL(released()), this, SLOT(SaveButtonReleased()));
+
+
 }
 
-void GameScenePainter::startGame()
+void GameScenePainter::startGame(const QString& filename)
 {
-    //开启计时器
-    gameTimer = startTimer(speed_ms);//游戏计时器
-    paintTimer = startTimer(refresh_ms);//画面刷新计数器
 
     //设定游戏初始状态
+    blocks = new Block();
     Score = 0;
     isGameOver = false;
+
+    if(!LoadFlag)
+    {
+        //初始化方块
+        blocks->InitScene();
+        blocks->GetNextBlock();
+        blocks->CreateNewBlock();
+    }
+    else
+    {
+        if(!loadGame(filename))
+        {
+            qDebug() << "读取失败，默认创建新游戏！";
+            blocks->InitScene();
+            blocks->GetNextBlock();
+            blocks->CreateNewBlock();
+        }
+        else
+        {
+            qDebug() << "读取成功！";
+        }
+    }
+
     ui->SpeedLine->setText(QString::number(speed_ms) + "ms");
+    ui->ScoreLine->setText(QString::number(Score));
 
     //gameQTimer->start(speed_ms);
     //paintQTimer->start(refresh_ms);
 
-    //初始化方块
-    blocks = new Block();
-    blocks->InitScene();
-    blocks->GetNextBlock();
-    blocks->CreateNewBlock();
+    //开启计时器
+    gameTimer = startTimer(speed_ms);//游戏计时器
+    paintTimer = startTimer(refresh_ms);//画面刷新计数器
+
 
 }
 
@@ -57,18 +82,16 @@ void GameScenePainter::gameOver()//游戏结束
     //paintQTimer->stop();
 
     //弹出窗口
-    gameOverMessage->setText(QString("游戏结束，你的得分为 %1 ，是否重新开始游戏？").arg(Score));
+    gameOverMessage->setText(QString("游戏结束，你的得分为 %1").arg(Score));
     gameOverMessage->exec();
     if(gameOverMessage->clickedButton() == yesButton)
     {
-        startGame();
+        startGame("");
     }
     else if(gameOverMessage->clickedButton() == noButton)
     {
-        qDebug() << "close";
         this->close();
     }
-
 
 
 }
@@ -88,6 +111,68 @@ void GameScenePainter::MoveDownOrigin()//恢复原来的下落速度
     //gameQTimer->setInterval(speed_ms);
 }
 
+void GameScenePainter::setGameSpeed(int speed)
+{
+    speed_ms = speed;
+}
+
+void GameScenePainter::setLoadFlag(bool loadflag)
+{
+    LoadFlag = loadflag;
+}
+
+void GameScenePainter::pauseGame()
+{
+    if(!isPause)
+    {
+        savedGameTimer = speed_ms;
+        savedPaintTimer = refresh_ms;
+
+        killTimer(gameTimer);
+        killTimer(paintTimer);
+
+        isPause = true;
+    }
+}
+
+void GameScenePainter::resumeGame()
+{
+    if(isPause)
+    {
+        gameTimer = startTimer(savedGameTimer);
+        paintTimer = startTimer(savedPaintTimer);
+
+        isPause = false;
+
+        update();
+    }
+}
+
+bool GameScenePainter::saveGame(const QString &filename)
+{
+    bool res = GameSaveAndLoad::saveGame(filename, *blocks, Score, speed_ms);
+    return res;
+}
+
+bool GameScenePainter::loadGame(const QString &filename)
+{
+    int savedScore = 0;
+    int savedSpeed = DEFAULT_SPEED_MS;
+
+    if(GameSaveAndLoad::loadGame(filename, *blocks, savedScore, savedSpeed))
+    {
+        Score = savedScore;
+        speed_ms = savedSpeed;
+        setGameSpeed(speed_ms);
+
+        update();
+        return true;
+    }
+
+    return false;
+}
+
+
 GameScenePainter::~GameScenePainter()
 {
     delete ui;
@@ -104,9 +189,9 @@ void GameScenePainter::timerEvent(QTimerEvent *event)//计时器更新画面
         {
             blocks->MergeSceneAndBlock(Score);//合并方块
 
-            if(blocks->isGameOver())//判断游戏是否结束
+            isGameOver = blocks->isGameOver();
+            if(isGameOver)//判断游戏是否结束
             {
-                isGameOver = true;
                 update();
                 gameOver();
                 update();
@@ -118,7 +203,7 @@ void GameScenePainter::timerEvent(QTimerEvent *event)//计时器更新画面
         }
     }
 
-
+    //更新画面
     if(event->timerId() == paintTimer)
     {
         update();
@@ -165,7 +250,7 @@ void GameScenePainter::paintEvent(QPaintEvent *event)//绘制画面
 
     for(int realX = next_block_x; realX <= next_block_x + 3 * NextBlockSize; realX += NextBlockSize)
     {
-        for(int realY = next_block_y ; realY <= next_block_y + 3 * NextBlockSize; realY+= NextBlockSize)
+        for(int realY = next_block_y ; realY <= next_block_y + 3 * NextBlockSize; realY += NextBlockSize)
         {
             painter.drawPixmap(realX ,realY , NextBlockSize, NextBlockSize, QPixmap("://image/block/png/element_grey_square_glossy.png"));
         }
@@ -196,10 +281,10 @@ void GameScenePainter::paintEvent(QPaintEvent *event)//绘制画面
     int startX = 3;
     int endX = 12;//x从3到12 从右往左 （1依次左移dx位（dx从小到大），所以是从右往左）
 
-    //每一行 用1左移dx位 和 场景每一行 进行 位与 运算 ，如果位与运算结果就等于 1左移dx位 那么就说明
+    //每一行 用 1左移dx位 和 场景每一行（也是一个数） 进行 位与 运算 ，如果位与运算结果就等于 1左移dx位 那么就说明
     //此 (dx,dy) 有方块 ， dx表示整个场景（24x16）从右往左数第 dx 个，dy表示整个场景（24x16）从上往下数第 dy 个
-    //下面的 x 表示玩家看得见的区域(20x10)从 右往左数 第 x 个数
-    //下面的 y 表示玩家看得见的区域(20x10)从 上往下数 第 y 个数 , 详情见UI.drawio和Tetris.drawio
+    //下面的 sceneX 表示玩家看得见的区域(20x10)从 右往左数 第 x 个数
+    //下面的 sceneY 表示玩家看得见的区域(20x10)从 上往下数 第 y 个数 , 详情见UI.drawio和Tetris.drawio
 
     for(int dy = startY; dy <= endY; dy++)
     {
@@ -266,9 +351,9 @@ void GameScenePainter::keyPressEvent(QKeyEvent *event)//按键事件
 
     switch(key)
     {
-    case Qt::Key_Left: blocks->MoveLeft();break;
-    case Qt::Key_Right: blocks->MoveRight();break;
-    case Qt::Key_Up: blocks->BlockRotate();break;
+    case Qt::Key_Left: blocks->MoveLeft(); break;
+    case Qt::Key_Right: blocks->MoveRight(); break;
+    case Qt::Key_Up: blocks->BlockRotate(); break;
     case Qt::Key_Down:
         if(!event->isAutoRepeat())
         {
@@ -302,6 +387,24 @@ void GameScenePainter::keyReleaseEvent(QKeyEvent *event)
 void GameScenePainter::on_CloseButton_released()
 {
     this->close();
+}
+
+void GameScenePainter::SaveButtonReleased()
+{
+    pauseGame();
+
+    QString filename = QFileDialog::getSaveFileName(this, tr("保存游戏"), QDir::homePath(), tr("俄罗斯方块存档 (*.sav)"));
+
+    if(!filename.isEmpty())
+    {
+        if(!filename.endsWith(".sav"))
+        {
+            filename += ".sav";
+        }
+        saveGame(filename);
+    }
+
+    resumeGame();
 }
 
 

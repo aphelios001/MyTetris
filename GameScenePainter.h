@@ -8,10 +8,13 @@
 #include <QPainter>
 #include <QStyleOption>
 #include <QPen>
+#include <QFileDialog>
 #include "Block.h"
+#include "GameSaveAndLoad.h"
 
-#define DEFAULT_SPEED_MS 400
-#define REFRESH_MS 1
+constexpr int DEFAULT_SPEED_MS = 400;
+constexpr int REFRESH_MS = 1;
+
 constexpr int Margain = 20;
 constexpr int BlockSize = 30;
 constexpr int NextBlockSize = 20;
@@ -28,40 +31,65 @@ class GameScenePainter : public QWidget
 
 public:
     explicit GameScenePainter(QWidget *parent = nullptr);
-    void startGame();
+    void startGame(const QString& filename);
     void gameOver();
     void MoveDownFaster();
     void MoveDownOrigin();
+
+    void setGameSpeed(int speed);
+    void setLoadFlag(bool loadflag);
+
+    void pauseGame();
+    void resumeGame();
+    bool saveGame(const QString& filename);
+    bool loadGame(const QString& filename);
+
     ~GameScenePainter();
 
 private:
     Ui::GameScenePainter *ui;
-    Block *blocks;
+
     QMessageBox *gameOverMessage;
     QPushButton *yesButton;
     QPushButton *noButton;
 
+    //Block 实例
+    Block *blocks;
+
+    //分数
     int Score = 0;
 
+    //标志
     bool isGameOver = false;
+    bool LoadFlag = false;
+    bool isPause = false;
 
-
-    int gameTimer;
-    int paintTimer;
-    QTimer *gameQTimer;
-    QTimer *paintQTimer;
+    //游戏速度 和 画面刷新速度
     int speed_ms = DEFAULT_SPEED_MS;
     int refresh_ms = REFRESH_MS;
 
+    int savedGameTimer = DEFAULT_SPEED_MS;
+    int savedPaintTimer = REFRESH_MS;
 
+
+    //计时器相关变量
+    int gameTimer;
+    int paintTimer;
+
+    QTimer *gameQTimer;
+    QTimer *paintQTimer;
+
+//各种事件重写声明
 protected:
     void timerEvent(QTimerEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
     void keyReleaseEvent(QKeyEvent *event) override;
 
+//槽函数声明
 private slots:
     void on_CloseButton_released();
+    void SaveButtonReleased();
     void SceneUpdate();
     void BlockUpdate();
 
