@@ -13,6 +13,8 @@ public:
     static constexpr int sc_GameRow = 20;//游戏实际行数
     static constexpr int sc_GameCol = 10;//游戏实际列数
 
+    static constexpr int sc_FullRow = 0b1111111111111111;//满行，用于消除
+
     static constexpr int sc_BlockRow = Tetrominos::sc_Row;//一个方块的行数
     static constexpr int sc_BlockCol = Tetrominos::sc_Row;//一个方块的列数
 
@@ -54,21 +56,36 @@ public:
 
 
     int getY();
+
     int getX();
+
     void InitScene();
+
     void GetNextBlock();
+
     void CreateNewBlock();
+
     void MergeSceneAndBlock(int &Score);
+
     bool isBlockCollide();
+
     bool AutoMoveDown();
+
     void MoveLeft();
+
     void MoveRight();
+
     void BlockRotate();
+
     bool isGameOver();
+
     void clearBlock();
 
 private:
 
+    //当前方块的状态，（位置，类型，下一个方块类型）
+    //方块在场景中的位置，需要通过当前的x 和 y来确定。
+    //注意：block[i]只占用低4位，低4位左移 x 位后，低位会补0，原本高位也都是0，因此只剩下这4位的数据存在。
     int x = 5;
     int y = 0;
     int CurrentBlockType = 0;

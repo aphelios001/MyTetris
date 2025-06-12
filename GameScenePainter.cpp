@@ -25,6 +25,7 @@ GameScenePainter::GameScenePainter(QWidget *parent)
     gameOverMessage->setWindowTitle("游戏结束");
 
     connect(ui->SaveButton, SIGNAL(released()), this, SLOT(SaveButtonReleased()));
+    connect(ui->PARButton, SIGNAL(released()), this, SLOT(PARButtonReleased()));
 
 
 }
@@ -96,32 +97,30 @@ void GameScenePainter::gameOver()//游戏结束
 
 }
 
-void GameScenePainter::MoveDownFaster()//快速下落
+void GameScenePainter::MoveDownFaster()// 快速下落
 {
     int newSpeed = speed_ms / 4;
     gameTimer = startTimer(newSpeed);
 
-    //gameQTimer->setInterval(newSpeed);
 }
 
-void GameScenePainter::MoveDownOrigin()//恢复原来的下落速度
+void GameScenePainter::MoveDownOrigin()// 恢复原来的下落速度
 {
     gameTimer = startTimer(speed_ms);
 
-    //gameQTimer->setInterval(speed_ms);
 }
 
-void GameScenePainter::setGameSpeed(int speed)
+void GameScenePainter::setGameSpeed(int speed)// 设定游戏速度
 {
     speed_ms = speed;
 }
 
-void GameScenePainter::setLoadFlag(bool loadflag)
+void GameScenePainter::setLoadFlag(bool loadflag)// 设定加载标志
 {
     LoadFlag = loadflag;
 }
 
-void GameScenePainter::pauseGame()
+void GameScenePainter::pauseGame()// 暂停游戏
 {
     if(!isPause)
     {
@@ -135,7 +134,7 @@ void GameScenePainter::pauseGame()
     }
 }
 
-void GameScenePainter::resumeGame()
+void GameScenePainter::resumeGame()// 恢复游戏
 {
     if(isPause)
     {
@@ -148,13 +147,13 @@ void GameScenePainter::resumeGame()
     }
 }
 
-bool GameScenePainter::saveGame(const QString &filename)
+bool GameScenePainter::saveGame(const QString &filename) //保存游戏
 {
     bool res = GameSaveAndLoad::saveGame(filename, *blocks, Score, speed_ms);
     return res;
 }
 
-bool GameScenePainter::loadGame(const QString &filename)
+bool GameScenePainter::loadGame(const QString &filename) //加载游戏
 {
     int savedScore = 0;
     int savedSpeed = DEFAULT_SPEED_MS;
@@ -173,45 +172,66 @@ bool GameScenePainter::loadGame(const QString &filename)
 }
 
 
-GameScenePainter::~GameScenePainter()
+GameScenePainter::~GameScenePainter()// 析构函数
 {
     delete ui;
 }
 
-void GameScenePainter::timerEvent(QTimerEvent *event)//计时器更新画面
+void GameScenePainter::timerEvent(QTimerEvent *event)
 {
+    // 如果触发的是游戏主逻辑定时器（gameTimer）
     if(event->timerId() == gameTimer)
     {
+        // 更新界面上显示的分数
         ui->ScoreLine->setText(QString::number(Score));
 
-        bool res = blocks->AutoMoveDown();//方块自动下落
-        if(!res)//不能再下落了
-        {
-            blocks->MergeSceneAndBlock(Score);//合并方块
+        // 尝试让当前方块自动下落一行
+        bool result = blocks->AutoMoveDown(); // 返回 false 表示无法继续下落
 
+        // 如果不能继续下落，说明方块已经落地或碰到其他方块
+        if(!result)
+        {
+            // 将当前方块合并到游戏场景中，并处理消除满行
+            blocks->MergeSceneAndBlock(Score);
+
+            // 检查游戏是否结束
             isGameOver = blocks->isGameOver();
-            if(isGameOver)//判断游戏是否结束
+
+            if(isGameOver) // 如果游戏结束
             {
-                update();
-                gameOver();
-                update();
+                update(); // 强制刷新界面
+                gameOver(); // 执行游戏结束逻辑
+                update(); // 再次刷新确保 UI 显示完整
             }
-            else
+            else // 游戏未结束
             {
+                // 创建新的方块开始下落
                 blocks->CreateNewBlock();
             }
         }
     }
 
-    //更新画面
+    // 如果触发的是画面刷新定时器（paintTimer）
     if(event->timerId() == paintTimer)
     {
+        // 根据暂停状态更新“暂停/继续”按钮的文本，保持与状态一致
+        if(isPause)
+        {
+            ui->PARButton->setText("继续游戏");
+        }
+        else
+        {
+            ui->PARButton->setText("暂停游戏");
+        }
+
+        // 请求重绘游戏窗口，触发 paintEvent 事件
         update();
     }
 }
 
 void GameScenePainter::paintEvent(QPaintEvent *event)//绘制画面
 {
+    // 初始化样式选项并创建 QPainter 对象用于绘图
     QStyleOption opt;
     opt.initFrom(this);
     QPainter p(this);
@@ -234,20 +254,22 @@ void GameScenePainter::paintEvent(QPaintEvent *event)//绘制画面
         painter.drawLine(Margain, Margain + j * BlockSize, Margain + ColBlockNum * BlockSize, Margain + j * BlockSize);
     }*/
 
+    // 使用灰色方块填充整个游戏区域作为背景格子
     for(int i = 0; i < RowBlockNum; i++)
     {
         for(int j = 0; j < ColBlockNum; j++)
         {
-            painter.drawPixmap(Margain + j * BlockSize, Margain + i * BlockSize, BlockSize, BlockSize, QPixmap("://image/block/png/element_grey_square_glossy.png"));
+            painter.drawPixmap(Margin + j * BlockSize, Margin + i * BlockSize, BlockSize, BlockSize, QPixmap("://image/block/png/element_grey_square_glossy.png"));
         }
     }
 
     //绘制下一个方块的网格
-    //这里的x和y是ui真正的坐标
-    //左上角格子的左上角坐标
+
+    // 定义下一个方块预览区域左上角坐标
     int next_block_x = 420;
     int next_block_y = 225;
 
+    // 绘制 4x4 的预览网格背景
     for(int realX = next_block_x; realX <= next_block_x + 3 * NextBlockSize; realX += NextBlockSize)
     {
         for(int realY = next_block_y ; realY <= next_block_y + 3 * NextBlockSize; realY += NextBlockSize)
@@ -258,26 +280,33 @@ void GameScenePainter::paintEvent(QPaintEvent *event)//绘制画面
 
     //绘制下一个方块
 
+    // 遍历下一个方块的 4x4 数据
     for(int block_dy = 0; block_dy < Block::sc_BlockRow; block_dy++)
     {
         for(int block_dx = 0; block_dx < Block::sc_BlockCol; block_dx++)
         {
             int tempNum = 1 << block_dx;
+            // 如果当前位为1，表示该位置有方块
             if( (blocks->next_block[block_dy] & tempNum) == tempNum)
             {
+                // 计算在预览区域中的实际绘制坐标
                 int next_block_sceneX = next_block_x + (Block::sc_BlockCol - block_dx - 1) * NextBlockSize;
                 int next_block_sceneY = next_block_y + block_dy * NextBlockSize;
+
+                // 绘制红色方块图像
                 painter.drawPixmap(next_block_sceneX, next_block_sceneY, NextBlockSize, NextBlockSize, QPixmap("://image/block/png/element_red_square_glossy.png"));
             }
         }
     }
 
     //下面的x和y是格子数
+
     //绘制游戏场景
     painter.setPen(QPen(Qt::black,2));
 
+    // 游戏可见区域起始行（跳过顶部缓冲区）
     int startY = 3;
-    int endY = startY + Block::sc_GameRow - 1;//y从3到22 从上往下
+    int endY = startY + Block::sc_GameRow - 1;//y从3 到 22 从上往下
     int startX = 3;
     int endX = 12;//x从3到12 从右往左 （1依次左移dx位（dx从小到大），所以是从右往左）
 
@@ -286,17 +315,32 @@ void GameScenePainter::paintEvent(QPaintEvent *event)//绘制画面
     //下面的 sceneX 表示玩家看得见的区域(20x10)从 右往左数 第 x 个数
     //下面的 sceneY 表示玩家看得见的区域(20x10)从 上往下数 第 y 个数 , 详情见UI.drawio和Tetris.drawio
 
+
+    //一格一格检查游戏场景是否有方块，有方块就计算绘制位置，进行绘制。
+
+    // 遍历场景中的每一行数据
     for(int dy = startY; dy <= endY; dy++)
     {
+        int rowData = blocks->GameSceneBlock[dy];
+
         for(int dx = startX; dx <= endX; dx++)
         {
             int tempNum = 1 << dx;
-            if( (blocks->GameSceneBlock[dy] & tempNum) == tempNum )
+
+            // 检查当前位是否有方块
+            if( (rowData & tempNum) == tempNum )
             {
+                // 转换为玩家可见区域的坐标（UI坐标系）
                 int sceneX = dx - 3 + 1;
                 int sceneY = dy - 3 + 1;
 
-                painter.drawPixmap(BlockSize * (10 - sceneX) + Margain, (sceneY - 1) * BlockSize + Margain, BlockSize, BlockSize, QPixmap("://image/block/png/element_blue_square_glossy.png"));
+                // 计算在界面上的实际绘制位置
+                int posX = BlockSize * (10 - sceneX) + Margin;
+                int posY = (sceneY - 1) * BlockSize + Margin;
+
+                // 绘制蓝色方块图像
+                painter.drawPixmap(posX, posY, BlockSize, BlockSize, QPixmap("://image/block/png/element_blue_square_glossy.png"));
+
                 //painter.setBrush(QBrush(Qt::blue,Qt::SolidPattern));
                 //painter.drawRect(BlockSize * (10 - sceneX) + Margain, (sceneY - 1) * BlockSize + Margain, BlockSize, BlockSize);
             }
@@ -316,22 +360,33 @@ void GameScenePainter::paintEvent(QPaintEvent *event)//绘制画面
     //那么就说明 方块坐标系的 (block_dx, block_dy) 有方块
     //换算成玩家可见区域(20x10)的sceneX 和 sceneY 需要依靠 block 自身的 x 和 y
 
+    // 遍历当前方块的 4x4 数据
     for(int block_dy = 0; block_dy < Block::sc_BlockRow; block_dy++)
     {
+        int rowData = blocks->block[block_dy];
         for(int block_dx = 0; block_dx < Block::sc_BlockCol; block_dx++)
         {
             int tempNum = 1 << block_dx;
-            if( (blocks->block[block_dy] & tempNum) == tempNum)
+            if( (rowData & tempNum) == tempNum)
             {
+                // 转换为玩家可见区域的坐标（UI坐标系）
                 int sceneX = (blocks->getX() + 1) - Block::sc_BlockCol + (block_dx + 1);
                 int sceneY = (blocks->getY() + block_dy) - 3 + 1;
-                if(sceneY <= 0)//若sceneY <= 0 不绘制 因为这时还没落下来 还在 dy(0-2)区域内
+
+                //若sceneY <= 0 不绘制 因为这时还没落下来 还在 顶部缓冲区 dy(0 - 2)区域内
+                if(sceneY <= 0)
                 {
                     continue;
                 }
+
+                // 计算绘制位置
+                int posX = BlockSize * (10 - sceneX) + Margin;
+                int posY = (sceneY - 1) * BlockSize + Margin;
+
                 //painter.setBrush(QBrush(Qt::red,Qt::SolidPattern));
                 //painter.drawRect(BlockSize * (10 - sceneX) + Margain, (sceneY - 1) * BlockSize + Margain, BlockSize, BlockSize);
-                painter.drawPixmap(BlockSize * (10 - sceneX) + Margain, (sceneY - 1) * BlockSize + Margain, BlockSize, BlockSize, QPixmap("://image/block/png/element_red_square_glossy.png"));
+                // 绘制红色方块图像
+                painter.drawPixmap(posX, posY, BlockSize, BlockSize, QPixmap("://image/block/png/element_red_square_glossy.png"));
                 //painter.drawPixmap(BlockSize * (10 - sceneX) + Margain, (sceneY - 1) * BlockSize + Margain, BlockSize, BlockSize, QPixmap("://image/block/png/selectorC.png"));
             }
         }
@@ -344,22 +399,26 @@ void GameScenePainter::keyPressEvent(QKeyEvent *event)//按键事件
 {
     int key = event->key();
 
-    if(isGameOver)
+    if(isGameOver || isPause)
     {
         return;
     }
 
+
     switch(key)
     {
-    case Qt::Key_Left: blocks->MoveLeft(); break;
-    case Qt::Key_Right: blocks->MoveRight(); break;
-    case Qt::Key_Up: blocks->BlockRotate(); break;
-    case Qt::Key_Down:
-        if(!event->isAutoRepeat())
-        {
-            MoveDownFaster();
-        }
-        break;
+        case Qt::Key_Left: blocks->MoveLeft(); break;
+
+        case Qt::Key_Right: blocks->MoveRight(); break;
+
+        case Qt::Key_Up: blocks->BlockRotate(); break;
+
+        case Qt::Key_Down:
+            if(!event->isAutoRepeat())
+            {
+                MoveDownFaster();
+            }
+            break;
     }
 }
 
@@ -367,19 +426,19 @@ void GameScenePainter::keyReleaseEvent(QKeyEvent *event)
 {
     int key = event->key();
 
-    if(isGameOver)
+    if(isGameOver || isPause)
     {
         return;
     }
 
     switch(key)
     {
-    case Qt::Key_Down:
-        if(!event->isAutoRepeat())
-        {
-            MoveDownOrigin();
-        }
-        break;
+        case Qt::Key_Down:
+            if(!event->isAutoRepeat())
+            {
+                MoveDownOrigin();
+            }
+            break;
     }
 }
 
@@ -391,49 +450,48 @@ void GameScenePainter::on_CloseButton_released()
 
 void GameScenePainter::SaveButtonReleased()
 {
+    // 保存当前的暂停状态，以便在保存后恢复
+    bool originPauseFlag = isPause;
+
+    // 调用 pauseGame() 暂停游戏，防止在保存过程中数据发生变化导致不一致
     pauseGame();
 
-    QString filename = QFileDialog::getSaveFileName(this, tr("保存游戏"), QDir::homePath(), tr("俄罗斯方块存档 (*.sav)"));
+    // 弹出文件对话框，让用户选择保存路径和文件名
+    QString filename = QFileDialog::getSaveFileName(this,
+                                                    tr("保存游戏"),           // 对话框标题
+                                                    QDir::homePath(),         // 默认打开路径：用户主目录
+                                                    tr("俄罗斯方块存档 (*.sav)")); // 文件过滤器
 
+    // 如果用户选择了文件路径且非空
     if(!filename.isEmpty())
     {
+        // 如果文件名没有以 .sav 结尾，则自动添加扩展名
         if(!filename.endsWith(".sav"))
         {
             filename += ".sav";
         }
+
+        // 调用 saveGame 函数将当前游戏状态保存到指定文件
         saveGame(filename);
     }
 
-    resumeGame();
+    // 如果保存前游戏是运行状态（非暂停），则恢复游戏继续运行
+    if(!originPauseFlag)
+        resumeGame();
 }
 
-
-
-//测试计时器功能用
-void GameScenePainter::SceneUpdate()
+void GameScenePainter::PARButtonReleased()
 {
-    update();
-}
-
-void GameScenePainter::BlockUpdate()
-{
-    bool res = blocks->AutoMoveDown();//方块自动下落
-    if(!res)//不能再下落了
+    if(!isPause)
     {
-        ui->ScoreLine->setText(QString::number(Score));
-        blocks->MergeSceneAndBlock(Score);//合并方块
-
-        if(blocks->isGameOver())//判断游戏是否结束
-        {
-            isGameOver = true;
-            update();
-            gameOver();
-            update();
-        }
-        else
-        {
-            blocks->CreateNewBlock();
-        }
+        pauseGame();
+        ui->PARButton->setText("继续游戏");
+    }
+    else
+    {
+        resumeGame();
+        ui->PARButton->setText("暂停游戏");
     }
 }
+
 

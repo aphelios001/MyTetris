@@ -15,7 +15,7 @@
 constexpr int DEFAULT_SPEED_MS = 400;
 constexpr int REFRESH_MS = 1;
 
-constexpr int Margain = 20;
+constexpr int Margin = 20;
 constexpr int BlockSize = 30;
 constexpr int NextBlockSize = 20;
 constexpr int RowBlockNum = 20;
@@ -41,6 +41,7 @@ public:
 
     void pauseGame();
     void resumeGame();
+
     bool saveGame(const QString& filename);
     bool loadGame(const QString& filename);
 
@@ -76,8 +77,6 @@ private:
     int gameTimer;
     int paintTimer;
 
-    QTimer *gameQTimer;
-    QTimer *paintQTimer;
 
 //各种事件重写声明
 protected:
@@ -90,8 +89,7 @@ protected:
 private slots:
     void on_CloseButton_released();
     void SaveButtonReleased();
-    void SceneUpdate();
-    void BlockUpdate();
+    void PARButtonReleased();// PAR : Pause And Resume
 
 };
 
